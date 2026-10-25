@@ -1,6 +1,6 @@
 # APRS-BOT-OIT-
 
-Bot APRS yang terhubung ke jaringan APRS-IS dan dapat menerima serta membalas pesan sesuai perintah yang didefinisikan di folder `commands`. Bot ini dibuat dengan Python dan mendukung konfigurasi callsign, passcode, serta penambahan command module secara dinamis.
+Bot APRS yang terhubung ke jaringan APRS-IS dan dapat menerima serta membalas pesan sesuai perintah yang didefinisikan di folder `commands`. Bot ini dibuat dengan Python dan mendukung konfigurasi callsign, passcode, serta fitur tambahan seperti upload gambar ke GitHub.
 
 ## Fitur
 
@@ -57,6 +57,96 @@ PORT = 14580
 
 > Pastikan callsign dan passcode yang digunakan valid sebelum menjalankan bot.
 
+## Cara Mendapatkan GitHub Token (untuk fitur `ping`)
+
+Fitur `ping` dapat membuat gambar selamat datang lalu mengunggahnya ke repositori GitHub. Untuk itu, Anda perlu membuat token GitHub dan menyimpannya di environment variable.
+
+### 1) Buat repository GitHub
+
+Jika Anda ingin hasil upload gambar disimpan di repo GitHub, pastikan repo sudah dibuat terlebih dahulu.
+
+Contoh:
+
+```text
+https://github.com/<username>/<repository>
+```
+
+### 2) Membuat Personal Access Token (PAT)
+
+Cara umum:
+
+1. Buka GitHub
+2. Klik avatar di kanan atas → `Settings`
+3. Masuk ke `Developer settings`
+4. Pilih `Personal access tokens`
+5. Klik `Fine-grained tokens` (disarankan) atau `Classic`
+6. Klik `Generate new token`
+7. Atur permission minimal:
+   - `Repository permissions` → `Contents` → `Read and write`
+8. Pilih repo yang akan digunakan
+9. Copy token yang muncul
+10. Simpan token tersebut dengan aman, karena token hanya tampil sekali
+
+> Jangan membagikan token ke publik atau ke repo lain.
+
+### 3) Menyimpan token di environment variable
+
+Pada Linux/macOS:
+
+```bash
+export GITHUB_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+Pada Windows PowerShell:
+
+```powershell
+$env:GITHUB_TOKEN = "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+Pada Windows CMD:
+
+```cmd
+set GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+Untuk penggunaan permanen:
+
+```powershell
+setx GITHUB_TOKEN "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+### 4) Atur repo tujuan di file `ping.py`
+
+Buka file:
+
+```python
+APRSBot-main/commands/ping.py
+```
+
+Lalu sesuaikan bagian ini:
+
+```python
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
+GITHUB_REPO = "keitopriss/u"
+GITHUB_BRANCH = "main"
+```
+
+Ubah ke repositori Anda sendiri, misalnya:
+
+```python
+GITHUB_REPO = "username/nama-repo-anda"
+GITHUB_BRANCH = "main"
+```
+
+> Jika repo bersifat privat, token harus memiliki akses ke repo tersebut.
+
+### 5) Jika tidak ingin menggunakan upload GitHub
+
+Jika Anda tidak membutuhkan fitur upload gambar, Anda dapat:
+
+- menghapus atau menonaktifkan bagian upload pada `ping.py`, atau
+- tetap membiarkan `GITHUB_TOKEN` kosong agar fungsi `ping` akan menampilkan pesan default tanpa gambar
+
 ## Menjalankan Bot
 
 1. Masuk ke folder proyek:
@@ -75,7 +165,7 @@ Bot akan melakukan koneksi ke APRS-IS, menunggu pesan masuk, dan otomatis mempro
 
 ## Cara Kerja Command
 
-Semua file Python di folder `APRSBot-main/commands` akan dipindai secara otomatis oleh `main.py` pada saat aplikasi dijalankan. Jika file tersebut memiliki fungsi `handle_command`, maka modul tersebut akan dimuat dan dapat dipanggil saat pesan diterima.
+Semua file Python di folder `APRSBot-main/commands` akan dipindai secara otomatis oleh `main.py` pada saat aplikasi dijalankan. Jika file tersebut memiliki fungsi `handle_command`, maka modul tersebut akan di-load otomatis dan siap dipanggil melalui callsign bot.
 
 Contoh command yang tersedia:
 
@@ -102,6 +192,26 @@ Maka bot akan otomatis mengenali command `hello` saat dikirim ke bot.
 - File `ping.py` memerlukan environment variable `GITHUB_TOKEN` untuk mengunggah gambar ke repositori GitHub.
 - Jika Anda tidak membutuhkan fitur upload gambar, Anda dapat menyesuaikan atau menghapus bagian tersebut.
 - Untuk produksi, disarankan untuk menyimpan konfigurasi sensitif seperti `CALLSIGN` dan `PASSCODE` di environment variable atau file konfigurasi yang aman.
+- Pastikan repository yang dituju benar, karena token GitHub hanya bekerja pada repo yang memiliki izin akses yang sesuai.
+- Untuk menghindari batasan panjang URL APRS, link hasil upload gambar harus tetap singkat. `ping.py` sudah mencoba memeriksa panjang link-nya.
+
+## Troubleshooting Umum
+
+### Error: `GITHUB_TOKEN belum diisi di terminal`
+
+Artinya token belum di-set di environment variable. Pastikan Anda menjalankan perintah `export` atau `set` sebelum menyalakan bot.
+
+### Error 403 / permission denied saat upload
+
+- Token belum memiliki izin `Contents: Read and write`
+- Repo yang dituju tidak sesuai
+- Repo bersifat privat tetapi token tidak memiliki akses
+
+### Bot tidak menerima pesan
+
+- Pastikan `CALLSIGN` dan `PASSCODE` valid
+- Pastikan port dan server benar
+- Cek koneksi internet dan akses ke APRS-IS
 
 ## Lisensi
 
@@ -112,6 +222,7 @@ Repositori ini dibuat untuk keperluan proyek contoh dan pengembangan bot APRS pr
 - APRS-IS server: `asia.aprs2.net`
 - Library APRS: `aprslib`
 - Bahasa pemrograman: Python
+- GitHub Token Docs: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
 
 ---
 
